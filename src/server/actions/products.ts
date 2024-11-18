@@ -2,6 +2,7 @@
 
 import {
   productCountryDiscountsSchema,
+  productCustomizationSchema,
   productDetailsSchema,
 } from "@/schemas/products";
 import { auth } from "@clerk/nextjs/server";
@@ -11,8 +12,10 @@ import {
   deleteProduct as deleteProductDb,
   updateProduct as updateProductDb,
   updateCountryDiscounts as updateCountryDiscountsDb,
+  updateProductCustomization as updateProductCustomizationDb,
 } from "@/server/db/products";
 import { redirect } from "next/navigation";
+import { canCreateProduct, canCustomizeBanner } from "@/server/permissions";
 
 export async function createProduct(
   unsafeData: z.infer<typeof productDetailsSchema>,
@@ -21,8 +24,9 @@ export async function createProduct(
   const { userId } = await auth();
   const { success, data } = productDetailsSchema.safeParse(unsafeData);
   const errorMassage = "Error creating product";
+  const canCreate = await canCreateProduct(userId);
 
-  if (!success || userId == null) {
+  if (!success || userId == null || !canCreate) {
     return { error: true, message: errorMassage };
   }
 
@@ -96,6 +100,29 @@ export async function updateCountryDiscounts(
   await updateCountryDiscountsDb(deleteIds, insert, { productId: id, userId });
 
   return { error: false, message: "Country discounts saved" };
+}
+
+export async function updateProductCustomization(
+  productId: string,
+  unsafeData: z.infer<typeof productCustomizationSchema>,
+) {
+  const errorMassage = "Error updating product customization";
+  const successMessage = "Product customization updated successfully";
+
+  const { userId } = await auth();
+  const { success, data } = productCustomizationSchema.safeParse(unsafeData);
+  const canCustomize = await canCustomizeBanner(userId);
+
+  if (!success || userId == null || !canCustomize) {
+    return { error: true, message: errorMassage };
+  }
+
+  await updateProductCustomizationDb(data, { productId, userId });
+
+  return {
+    error: !success,
+    message: success ? successMessage : errorMassage,
+  };
 }
 
 export async function deleteProduct(id: string) {

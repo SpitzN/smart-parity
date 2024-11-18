@@ -4,7 +4,7 @@ import {
   ProductCustomizationTable,
   ProductTable,
 } from "@/drizzle/schema";
-import { and, eq, inArray, sql } from "drizzle-orm";
+import { and, count, eq, inArray, sql } from "drizzle-orm";
 import {
   CACHE_TAGS,
   dbCache,
@@ -15,12 +15,29 @@ import {
 } from "@/lib/cache";
 import { BatchItem } from "drizzle-orm/batch";
 
-export function getProducts(userId: string, { limit }: { limit?: number }) {
+export function getProducts(
+  userId: string,
+  { limit }: { limit?: number } = {},
+) {
   const cacheFn = dbCache(getProductsInternal, {
     tags: [getUserTag(userId, CACHE_TAGS.products)],
   });
 
   return cacheFn(userId, { limit });
+}
+
+export function getProductCustomization({
+  productId,
+  userId,
+}: {
+  productId: string;
+  userId: string;
+}) {
+  const cacheFn = dbCache(getProductCustomizationInternal, {
+    tags: [getIdTag(productId, CACHE_TAGS.products)],
+  });
+
+  return cacheFn(productId, userId);
 }
 
 export function getProduct({ id, userId }: { id: string; userId: string }) {
@@ -48,6 +65,14 @@ export function getProductCountryGroups({
   return cacheFn(productId, userId);
 }
 
+export async function getProductCount(userId: string) {
+  const cacheFn = dbCache(getProductCountInternal, {
+    tags: [getUserTag(userId, CACHE_TAGS.products)],
+  });
+
+  return cacheFn(userId);
+}
+
 export async function createProduct(data: typeof ProductTable.$inferInsert) {
   const [newProduct] = await db
     .insert(ProductTable)
@@ -72,28 +97,6 @@ export async function createProduct(data: typeof ProductTable.$inferInsert) {
   });
 
   return newProduct;
-}
-
-export async function deleteProduct({
-  id,
-  userId,
-}: {
-  id: string;
-  userId: string;
-}) {
-  const { rowCount } = await db
-    .delete(ProductTable)
-    .where(and(eq(ProductTable.id, id), eq(ProductTable.clerkUserId, userId)));
-
-  if (rowCount > 0) {
-    revalidateDbCache({
-      tag: CACHE_TAGS.products,
-      userId,
-      id,
-    });
-  }
-
-  return rowCount > 0;
 }
 
 export async function updateProduct(
@@ -172,6 +175,57 @@ export async function updateCountryDiscounts(
   });
 }
 
+export async function updateProductCustomization(
+  data: Partial<typeof ProductCustomizationTable.$inferInsert>,
+  {
+    productId,
+    userId,
+  }: {
+    productId: string;
+    userId: string;
+  },
+) {
+  const product = await getProduct({ id: productId, userId });
+  if (product == null) return false;
+
+  const { rowCount } = await db
+    .update(ProductCustomizationTable)
+    .set(data)
+    .where(eq(ProductCustomizationTable.productId, productId));
+
+  if (rowCount > 0) {
+    revalidateDbCache({
+      tag: CACHE_TAGS.products,
+      userId,
+      id: productId,
+    });
+  }
+
+  return rowCount > 0;
+}
+
+export async function deleteProduct({
+  id,
+  userId,
+}: {
+  id: string;
+  userId: string;
+}) {
+  const { rowCount } = await db
+    .delete(ProductTable)
+    .where(and(eq(ProductTable.id, id), eq(ProductTable.clerkUserId, userId)));
+
+  if (rowCount > 0) {
+    revalidateDbCache({
+      tag: CACHE_TAGS.products,
+      userId,
+      id,
+    });
+  }
+
+  return rowCount > 0;
+}
+
 function getProductsInternal(userId: string, { limit }: { limit?: number }) {
   return db.query.ProductTable.findMany({
     where: ({ clerkUserId }, { eq }) => eq(clerkUserId, userId),
@@ -222,4 +276,29 @@ async function getProductCountryGroupsInternal(
       discount: group.countryGroupDiscounts.at(0),
     };
   });
+}
+
+async function getProductCustomizationInternal(
+  productId: string,
+  userId: string,
+) {
+  const data = await db.query.ProductTable.findFirst({
+    where: ({ id, clerkUserId }, { eq, and }) =>
+      and(eq(id, productId), eq(clerkUserId, userId)),
+    with: {
+      productCustomization: true,
+    },
+  });
+  return data?.productCustomization;
+}
+
+async function getProductCountInternal(userId: string) {
+  const counts = await db
+    .select({
+      productCount: count(),
+    })
+    .from(ProductTable)
+    .where(eq(ProductTable.clerkUserId, userId));
+
+  return counts[0].productCount ?? 0;
 }
