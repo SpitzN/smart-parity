@@ -22,6 +22,7 @@ import { ChevronDown, ChevronDownIcon } from "lucide-react";
 import Link from "next/link";
 import { createUrl } from "@/lib/utils";
 import { getProducts } from "@/server/db/products";
+import { TimezoneDropdownMenuItem } from "../_components/TimezoneDropdownMenuItem";
 
 export default async function AnalyticsPage({
   searchParams,
@@ -68,11 +69,33 @@ export default async function AnalyticsPage({
                 ))}
               </DropdownMenuContent>
             </DropdownMenu>
+
             <ProductDropdown
               userId={userId}
               selectedProductId={productId}
               searchParams={searchParams}
             />
+
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline">
+                  {timezone}
+                  <ChevronDown className="ml-2 size-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                <DropdownMenuItem asChild>
+                  <Link
+                    href={createUrl("/dashboard/analytics", searchParams, {
+                      timezone: "UTC",
+                    })}
+                  >
+                    UTC
+                  </Link>
+                </DropdownMenuItem>
+                <TimezoneDropdownMenuItem searchParams={searchParams} />
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </HasPermission>
       </div>

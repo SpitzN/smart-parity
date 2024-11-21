@@ -32,7 +32,7 @@ export async function createProduct(
 
   const { id } = await createProductDb({ ...data, clerkUserId: userId });
 
-  redirect(`/dashboard/products/${id}/edit?=tab=countries`);
+  redirect(`/dashboard/products/${id}/edit?tab=countries`);
 }
 
 export async function updateProduct(
