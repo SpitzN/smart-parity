@@ -94,7 +94,7 @@ export default function ProductCustomizationForm({
           onSubmit={form.handleSubmit(onSubmit)}
           className="mt-8 flex flex-col gap-6"
         >
-          <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
+          <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
             <FormField
               name="locationMessage"
               control={form.control}

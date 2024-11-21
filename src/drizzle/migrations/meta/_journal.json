@@ -8,6 +8,27 @@
       "when": 1731482014942,
       "tag": "0000_classy_morph",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1732005138918,
+      "tag": "0001_wet_squirrel_girl",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1732005584465,
+      "tag": "0002_flashy_ares",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1732183393186,
+      "tag": "0003_dashing_wilson_fisk",
+      "breakpoints": true
     }
   ]
 }

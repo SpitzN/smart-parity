@@ -1,5 +1,7 @@
 import { getProductCount } from "./db/products";
+import { getProductViewCount } from "./db/productViews";
 import { getUserSubscriptionTier } from "./db/subscription";
+import { startOfMonth } from "date-fns";
 
 export async function canRemoveBranding(userId: string | null) {
   if (userId == null) return false;
@@ -29,4 +31,14 @@ export async function canCreateProduct(userId: string | null) {
   const productCount = await getProductCount(userId);
 
   return productCount < tier.maxNumberOfProducts;
+}
+
+export async function canShowDiscountBanner(userId: string | null) {
+  if (userId == null) return false;
+  const tier = await getUserSubscriptionTier(userId);
+  const productViews = await getProductViewCount(
+    userId,
+    startOfMonth(new Date()),
+  );
+  return productViews < tier.maxNumberOfVisits;
 }
