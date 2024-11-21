@@ -176,8 +176,19 @@ function PricingCard({
   canRemoveBranding,
 }: (typeof subscriptionTiersInOrder)[number]) {
   const isMostPopular = name === "Standard";
+
   return (
-    <Card>
+    <Card
+      className={cn(
+        "relative overflow-hidden rounded-3xl shadow-none",
+        isMostPopular ? "border-2 border-accent" : "border-none",
+      )}
+    >
+      {isMostPopular && (
+        <div className="absolute -right-8 top-24 origin-top-right rotate-45 bg-accent px-10 py-1 text-accent-foreground">
+          Most Popular
+        </div>
+      )}
       <CardHeader>
         <div className="mb-8 font-semibold text-accent">{name}</div>
         <CardTitle className="text-xl font-bold">
